@@ -2,6 +2,7 @@
 #include "driver/spi_master.h"
 #include "esp_err.h"
 #include "esp_lcd_panel_io.h"
+#include "lvgl.h"
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_panel_vendor.h"
 #include "esp_log.h"
@@ -19,8 +20,9 @@
 #define PIN_NUM_BCKL 21
 
 //=== Cấu hình màn hình ===//
-#define LCD_H_RES            320
-#define LCD_V_RES            240
+// Chế độ ngang (landscape): width = 320, height = 240
+#define LCD_H_RES            480 // pixels
+#define LCD_V_RES            320
 #define LCD_PIXEL_CLOCK_HZ   (20 * 1000 * 1000) // 20 MHz an toàn cho hầu hết màn SPI
 
 // Kích thước vùng vẽ chữ (nhỏ để tiết kiệm RAM)
@@ -115,6 +117,20 @@ static void init_backlight(void)
 	ESP_ERROR_CHECK(gpio_set_level(PIN_NUM_BCKL, 1));
 }
 
+// Hàm xóa toàn bộ màn hình bằng một màu
+static void clear_screen(esp_lcd_panel_handle_t panel, uint16_t color)
+{
+	static uint16_t line_buf[LCD_H_RES];
+	// Tô màu cho buffer 1 dòng
+	for (int i = 0; i < LCD_H_RES; i++) {
+		line_buf[i] = color;
+	}
+	// Vẽ từng dòng lên màn hình
+	for (int y = 0; y < LCD_V_RES; y++) {
+		esp_lcd_panel_draw_bitmap(panel, 0, y, LCD_H_RES, y + 1, line_buf);
+	}
+}
+
 void app_main(void)
 {
 	ESP_LOGI(TAG, "Khởi động demo LCD SPI");
@@ -155,20 +171,45 @@ void app_main(void)
 
 	ESP_ERROR_CHECK(esp_lcd_panel_reset(panel_handle));
 	ESP_ERROR_CHECK(esp_lcd_panel_init(panel_handle));
-	ESP_ERROR_CHECK(esp_lcd_panel_mirror(panel_handle, false, true));
+	
+	// Xoay màn hình sang chế độ ngang (landscape)
+	// swap_xy = true để đổi trục X-Y, mirror_x và mirror_y để điều chỉnh hướng
+	ESP_ERROR_CHECK(esp_lcd_panel_swap_xy(panel_handle, true));
+	ESP_ERROR_CHECK(esp_lcd_panel_mirror(panel_handle, true, true));
+	
 	ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel_handle, true));
 
+	// Xóa toàn bộ màn hình bằng màu đen
+	const uint16_t color_black = rgb565(0, 0, 0);
+	clear_screen(panel_handle, color_black);
+	ESP_LOGI(TAG, "Đã xóa màn hình");
+	vTaskDelay(pdMS_TO_TICKS(1000)); // Đợi 1 giây
+
+	// Vẽ "Hello, World!" lên màn hình
 	static uint16_t text_buf[TEXT_AREA_W * TEXT_AREA_H];
 	const uint16_t bg = rgb565(230, 240, 255);
 	const uint16_t fg = rgb565(20, 40, 80);
 	fill_buffer(text_buf, TEXT_AREA_W, TEXT_AREA_H, bg);
-	draw_string(text_buf, TEXT_AREA_W, 10, 10, "Hello, World!", fg, bg);// fg: màu của nét chữ, bg: màu nền chữ
+	draw_string(text_buf, TEXT_AREA_W, 10, 10, "Hello, World!", fg, bg);
 
 	int x0 = (LCD_H_RES - TEXT_AREA_W) / 2;
 	int y0 = (LCD_V_RES - TEXT_AREA_H) / 2;
 	ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(panel_handle, x0, y0, x0 + TEXT_AREA_W, y0 + TEXT_AREA_H, text_buf));
-
 	ESP_LOGI(TAG, "Đã vẽ 'Hello, World!' lên màn hình");
+
+	// Demo: Đợi 3 giây rồi xóa và vẽ text mới
+	vTaskDelay(pdMS_TO_TICKS(3000));
+	
+	// Xóa màn hình
+	clear_screen(panel_handle, color_black);
+	ESP_LOGI(TAG, "Đã xóa màn hình lần 2");
+	vTaskDelay(pdMS_TO_TICKS(500));
+
+	// Vẽ text mới
+	fill_buffer(text_buf, TEXT_AREA_W, TEXT_AREA_H, rgb565(255, 200, 200)); // Nền đỏ nhạt
+	draw_string(text_buf, TEXT_AREA_W, 20, 15, "ESP32 Screen!", rgb565(200, 0, 0), rgb565(255, 200, 200));
+	ESP_ERROR_CHECK(esp_lcd_panel_draw_bitmap(panel_handle, x0, y0, x0 + TEXT_AREA_W, y0 + TEXT_AREA_H, text_buf));
+	ESP_LOGI(TAG, "Đã vẽ text mới lên màn hình");
 
 	// Giữ task chính để màn hình vẫn bật
 	while (true) {
