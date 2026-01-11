@@ -13,6 +13,10 @@
 #include "stdio.h"
 
 #include "parameter.h"
+#include "logo.c"
+#include "internet_posible.c"
+#include "control_led_rgb.h"
+
 #define LCD_HOST SPI2_HOST
 
 //=== Cấu hình chân SPI (Giữ nguyên) ===//
@@ -35,6 +39,7 @@ static esp_lcd_panel_handle_t panel_handle = NULL;
 static lv_disp_drv_t * global_disp_drv = NULL;
 static lv_obj_t *body, *header, *footer;
 static lv_obj_t *txt_time, *txt_header, *txt_signal;
+lv_obj_t *image_logo, *image_signal;
 static object_parameter_t gate_obj[10];
 char data_str[50];
 
@@ -103,7 +108,7 @@ void display_init(void){
     // 3. Panel Config
     esp_lcd_panel_dev_config_t panel_config = {
         .reset_gpio_num = PIN_NUM_RST,
-        .color_space = ESP_LCD_COLOR_SPACE_RGB,
+        .color_space = ESP_LCD_COLOR_SPACE_BGR,
         .bits_per_pixel = 16,
     };
     ESP_ERROR_CHECK(esp_lcd_new_panel_st7796(io_handle, &panel_config, &panel_handle));
@@ -228,7 +233,7 @@ void app_main(void)
     ESP_LOGI(TAG, "Khoi dong (Fix Double Image Mode)...");
 
     // --- KHU VỰC SỬA LỖI HIỂN THỊ ---
-    display_init();
+  /*  display_init();
     // lv_obj_clean(lv_scr_act());
     // lv_obj_t* scr = lv_scr_act();
     // set_text(scr, "Hello World", LV_ALIGN_CENTER, lv_color_make(255, 0, 0), lv_color_make(200, 200, 200));
@@ -237,13 +242,22 @@ void app_main(void)
 //==========================================
     // Tạo bố cục chính
     header = lv_obj_create(lv_scr_act());
-    set_background(header, lv_palette_main(LV_PALETTE_BLUE), 50, 480, LV_ALIGN_TOP_MID, 0, 0);
+    set_background(header, lv_palette_main(LV_PALETTE_BLUE_GREY), 50, 480, LV_ALIGN_TOP_MID, 0, 0);
     txt_time = lv_label_create(header);
-    txt_header = lv_label_create(header);
-    txt_signal = lv_label_create(header);
-    set_text(txt_time, "Time 00:12", LV_ALIGN_RIGHT_MID, lv_color_make(0, 0, 0),0,0);
-    set_text(txt_header, "EVSAFE", LV_ALIGN_CENTER, lv_color_white(),0,0);
-    set_text(txt_signal, LV_SYMBOL_WIFI, LV_ALIGN_LEFT_MID, lv_color_make(0, 0, 0),0,0);
+   // txt_header = lv_label_create(header);
+    //txt_signal = lv_label_create(header);
+    image_logo= lv_img_create(header);
+    image_signal = lv_img_create(header);
+    lv_obj_set_style_img_recolor(image_signal, lv_color_white(), 0);
+    lv_obj_set_style_img_recolor_opa(image_signal, LV_OPA_COVER, 0);
+    lv_img_set_src(image_logo, &logo);
+    lv_img_set_src(image_signal, &android_cell_4_bar_40dp_1F1F1F_FILL0_wght400_GRAD0_opsz40);
+    
+    set_text(txt_time, "Time 00:12", LV_ALIGN_RIGHT_MID, lv_color_make(255, 255, 255),0,0);
+    //set_text(txt_header, "EVsafe", LV_ALIGN_CENTER, lv_color_make(0,255,0),0,0);
+    lv_obj_align(image_logo, LV_ALIGN_CENTER, 0, 0);
+    lv_obj_align(image_signal, LV_ALIGN_LEFT_MID, 0, 0);
+    //set_text(txt_signal, LV_SYMBOL_WIFI, LV_ALIGN_LEFT_MID, lv_color_make(255, 255, 255),0,0);
     body = lv_obj_create(lv_scr_act());
     set_background(body, lv_palette_lighten(LV_PALETTE_GREY, 4), 230, 480, LV_ALIGN_TOP_MID, 0, 50);
     // gate_obj[0].ob_name = lv_label_create(body);
@@ -255,19 +269,21 @@ void app_main(void)
         gate_obj[i].ob_value = lv_label_create(body);
         snprintf(data_str, sizeof(data_str), "Gate %d: ", i+1);
         set_text(gate_obj[i].ob_name, data_str, LV_ALIGN_TOP_LEFT, lv_color_black(),0,10 + i*40);
-        set_text(gate_obj[i].ob_value,LV_SYMBOL_CLOSE , LV_ALIGN_TOP_LEFT, lv_color_make(0, 150, 0),70,10 + i*40);    
+        snprintf(data_str, sizeof(data_str),"%s-%dw" ,LV_SYMBOL_CHARGE,100);
+        set_text(gate_obj[i].ob_value, data_str   , LV_ALIGN_TOP_LEFT, lv_color_make(0, 150, 0),70,10 + i*40);    
     }
     for(int i=5; i<10; i++){
         gate_obj[i].ob_name = lv_label_create(body);
         gate_obj[i].ob_value = lv_label_create(body);
         snprintf(data_str, sizeof(data_str), "Gate %d: ", i+1);
         set_text(gate_obj[i].ob_name, data_str, LV_ALIGN_TOP_RIGHT, lv_color_black(),-80,10 + (i-5)*40);
-        set_text(gate_obj[i].ob_value, LV_SYMBOL_CLOSE, LV_ALIGN_TOP_RIGHT, lv_color_make(0, 150, 0),0,10 + (i-5)*40);    
+        set_text(gate_obj[i].ob_value, "closed", LV_ALIGN_TOP_RIGHT,lv_palette_main(LV_PALETTE_ORANGE),0,10 + (i-5)*40);    
     }
     footer = lv_obj_create(lv_scr_act());
-    set_background(footer, lv_palette_main(LV_PALETTE_ORANGE), 40, 480, LV_ALIGN_BOTTOM_MID, 0, 0);
-
-    // Vòng lặp chính
+    set_background(footer,  lv_palette_lighten(LV_PALETTE_GREY, 4), 40, 480, LV_ALIGN_BOTTOM_MID, 0, 0);
+    */
+    mode_rgb = mode_5;
+    xTaskCreate(set_mode_rgb, "start_charge_led", 4096, NULL, 5, NULL);
     while (1) {
         lv_timer_handler();
         vTaskDelay(pdMS_TO_TICKS(10));

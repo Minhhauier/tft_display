@@ -82,5 +82,7 @@ D:/Baitap/work/firmware/Screen_test/Test_screen/build/esp-idf/rt/librt.a
 D:/Baitap/work/firmware/Screen_test/Test_screen/build/esp-idf/spiffs/libspiffs.a
 D:/Baitap/work/firmware/Screen_test/Test_screen/build/esp-idf/wifi_provisioning/libwifi_provisioning.a
 D:/Baitap/work/firmware/Screen_test/Test_screen/build/esp-idf/espressif__esp_lcd_st7796/libespressif__esp_lcd_st7796.a
+D:/Baitap/work/firmware/Screen_test/Test_screen/build/esp-idf/espressif__led_strip/libespressif__led_strip.a
+D:/Baitap/work/firmware/Screen_test/Test_screen/build/esp-idf/control_led_rgb/libcontrol_led_rgb.a
 D:/Baitap/work/firmware/Screen_test/Test_screen/build/esp-idf/lvgl__lvgl/liblvgl__lvgl.a
 D:/Baitap/work/firmware/Screen_test/Test_screen/build/esp-idf/main/libmain.a

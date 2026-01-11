@@ -559,6 +559,16 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
+  include("D:/Baitap/work/firmware/Screen_test/Test_screen/build/esp-idf/espressif__led_strip/cmake_install.cmake")
+endif()
+
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for the subdirectory.
+  include("D:/Baitap/work/firmware/Screen_test/Test_screen/build/esp-idf/control_led_rgb/cmake_install.cmake")
+endif()
+
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for the subdirectory.
   include("D:/Baitap/work/firmware/Screen_test/Test_screen/build/esp-idf/lvgl__lvgl/cmake_install.cmake")
 endif()
 

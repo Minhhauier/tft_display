@@ -82,5 +82,7 @@ $<TARGET_FILE:__idf_rt>
 $<TARGET_FILE:__idf_spiffs>
 $<TARGET_FILE:__idf_wifi_provisioning>
 $<TARGET_FILE:__idf_espressif__esp_lcd_st7796>
+$<TARGET_FILE:__idf_espressif__led_strip>
+$<TARGET_FILE:__idf_control_led_rgb>
 $<TARGET_FILE:__idf_lvgl__lvgl>
 $<TARGET_FILE:__idf_main>
